@@ -6,36 +6,30 @@ on:
       - main
     types: [closed]
 
-  # workflow_dispatch:
-  #   branches:
-  #     - main
-  #   inputs:
-  #     tag:
-  #       description: 'Tag to deploy'
-  #       required: true
-  #       type: choice
-  #       options:
-  #         - 'v0.0.1'
-
 permissions:
   id-token: write
   contents: read
   issues: write
   pull-requests: write
 
-# jobs:
-# discord-notification:
-#     - name: Send notification to Discord
-#       if: github.event.pull_request.merged == true
-#       env:
-#         DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
-#       run: |
-#         curl -X POST -H "Content-Type: application/json" -d "{\"content\":\"Workflow URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\"}" $DISCORD_WEBHOOK_URL Send Notification to Discord
+env:
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
 jobs:
+  notify-discord:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send workflow URL to Discord
+        run: |
+          curl -H "Content-Type: application/json" \
+          -X POST \
+          -d '{"content": "Terraform Apply 準備! 請協助 Approve: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"}' \
+          ${{ secrets.DISCORD_WEBHOOK_URL }}
   manual-approval:
     name: Manual approval the deployment
     if: github.event.pull_request.merged == true
-    # needs: discord-notification
+    needs: notify-discord
     runs-on: ubuntu-latest
     steps:
       - name: Wait for Approval
@@ -53,7 +47,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: tasks/task-6-2/src
+        working-directory: src
 
     steps:
       - uses: actions/checkout@v4
@@ -63,7 +57,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v4
         with:
           audience: sts.amazonaws.com
-          aws-region: ${{ secrets.AWS_REGION }}
+          aws-region: ap-northeast-1
           role-to-assume: ${{ secrets.AWS_ARN }}
 
       - name: Terraform Init
