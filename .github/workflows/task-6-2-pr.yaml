@@ -18,18 +18,18 @@ jobs:
       - name: Terraform Init
         id: init
         run: terraform init
-        working-directory: tasks/task-6-2/src
+        working-directory: src
 
       - name: Terraform Validate
         id: validate
         run: terraform validate -no-color
-        working-directory: tasks/task-6-2/src
+        working-directory: src
 
       - name: Terraform Plan
         id: plan
         run: terraform plan -no-color
         continue-on-error: true
-        working-directory: tasks/task-6-2/src
+        working-directory: src
 
       - uses: actions/github-script@v6
         if: github.event_name == 'pull_request'

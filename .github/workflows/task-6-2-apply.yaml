@@ -1,0 +1,84 @@
+name: Task-6-2 Terraform Apply Workflow
+
+on:
+  pull_request:
+    branches:
+      - main
+    types: [closed]
+
+  # workflow_dispatch:
+  #   branches:
+  #     - main
+  #   inputs:
+  #     tag:
+  #       description: 'Tag to deploy'
+  #       required: true
+  #       type: choice
+  #       options:
+  #         - 'v0.0.1'
+
+permissions:
+  id-token: write
+  contents: read
+  issues: write
+  pull-requests: write
+
+# jobs:
+# discord-notification:
+#     - name: Send notification to Discord
+#       if: github.event.pull_request.merged == true
+#       env:
+#         DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+#       run: |
+#         curl -X POST -H "Content-Type: application/json" -d "{\"content\":\"Workflow URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\"}" $DISCORD_WEBHOOK_URL Send Notification to Discord
+jobs:
+  manual-approval:
+    name: Manual approval the deployment
+    if: github.event.pull_request.merged == true
+    # needs: discord-notification
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wait for Approval
+        uses: trstringer/manual-approval@v1
+        with:
+          secret: ${{ github.TOKEN }}
+          approvers: cross1469
+          minimum-approvals: 1
+          exclude-workflow-initiator-as-approver: false
+
+  terraform-apply:
+    name: Terraform apply
+    if: github.event.pull_request.merged == true
+    needs: manual-approval
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: tasks/task-6-2/src
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          audience: sts.amazonaws.com
+          aws-region: ${{ secrets.AWS_REGION }}
+          role-to-assume: ${{ secrets.AWS_ARN }}
+
+      - name: Terraform Init
+        id: init
+        run: terraform init
+
+      - name: Terraform Validate
+        id: validate
+        run: terraform validate -no-color
+
+      - name: Terraform Plan
+        id: plan
+        run: terraform plan -no-color
+        continue-on-error: false
+
+      - name: Terraform Apply
+        id: apply
+        run: terraform apply -auto-approve
