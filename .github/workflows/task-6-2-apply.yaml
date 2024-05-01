@@ -36,7 +36,7 @@ jobs:
         uses: trstringer/manual-approval@v1
         with:
           secret: ${{ github.TOKEN }}
-          approvers: Oakley
+          approvers: cross1469
           minimum-approvals: 1
           exclude-workflow-initiator-as-approver: false
 
