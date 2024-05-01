@@ -9,7 +9,8 @@ jobs:
   validate-and-plan:
     runs-on: ubuntu-latest
     permissions:
-      issues: write
+      contents: read
+      pull-requests: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
