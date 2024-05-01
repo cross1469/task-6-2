@@ -8,6 +8,8 @@ on:
 jobs:
   validate-and-plan:
     runs-on: ubuntu-latest
+    permissions:
+      issues: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
